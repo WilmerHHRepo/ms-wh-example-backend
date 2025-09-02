@@ -25,6 +25,8 @@ quarkus:
     root-path: /api
   smallrye-health:
     root-path: /api/health
+    liveness-path: /q/health/live
+    readiness-path: /q/health/ready
 
 
 

@@ -20,14 +20,14 @@ spec:
             - containerPort: 8080
           readinessProbe:
             httpGet:
-              path: /q/health/ready
+              path: /
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /q/health/live
+              path: /
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 15
