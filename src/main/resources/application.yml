@@ -1,0 +1,31 @@
+greeting:
+  message: "hello"
+
+
+
+
+# Kafka bootstrap
+  #kafka:
+    #  bootstrap:
+#    servers: localhost:9092
+
+  #mp:
+    #  messaging:
+    #    outgoing:
+    #      products-out:
+    #        connector: smallrye-kafka
+    #        topic: my-topic
+    #        value:
+    #          serializer: org.apache.kafka.common.serialization.StringSerializer
+    #        key:
+    #          serializer: org.apache.kafka.common.serialization.StringSerializer
+quarkus:
+  http:
+    port: 8080
+    root-path: /api
+  smallrye-health:
+    root-path: /api/health
+
+
+
+

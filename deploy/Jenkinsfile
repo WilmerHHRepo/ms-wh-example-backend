@@ -1,0 +1,110 @@
+pipeline {
+    agent any
+    tools {
+        maven 'Maven-3.9.11' // Nombre que configuraste en Tools
+        jdk 'graalvm-21'        // Si tu proyecto lo necesita
+    }
+    environment {
+
+        //APP_NAME   = 'ms-wh-example'
+        APP_NAME   = 'ms-wh-example-backend'
+        NAMESPACE  = 'wh'
+        IMAGE_NAME = 'whuaqui/ms-wh-example-backend'     // Docker Hub repo
+        //IMAGE_NAME = 'whuaqui/ms-wh-example'     // Docker Hub repo
+        //IMAGE_TAG  = "${env.BUILD_NUMBER}"       // o usa commit SHA: sh(script:'git rev-parse --short HEAD', returnStdout:true).trim()
+        IMAGE_TAG  = "1.0.0-SNAPSHOT"       // o usa commit SHA: sh(script:'git rev-parse --short HEAD', returnStdout:true).trim()
+
+        SONARQUBE_ENV = 'SonarQube'
+        DOCKER_IMAGE = "whuaqui/ms-wh-example-backend:1.0.0-SNAPSHOT"
+        PATH_DOCKERFILE ="/var/jenkins_home/workspace/ms-wh-example-batch/src/main/docker/Dockerfile.jvm"
+    }
+    stages {
+        stage('Verificar Maven') {
+            steps {
+                sh 'pwd'
+                sh 'ls -l'
+                sh 'ls -l /var/jenkins_home/workspace/ms-wh-example-batch/src/main/docker/'
+                sh 'echo $JAVA_HOME'
+                sh 'java -version'
+                sh 'javac -version'
+                sh 'mvn -v'
+
+            }
+        }
+        stage('Mostrar variables') {
+            steps {
+                sh 'printenv'
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+
+        stage('Build Quarkus Native') {
+            steps {
+                sh 'mvn package'
+            }
+        }
+
+
+/*        stage('Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+*/
+        stage('Docker hub Login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    """
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker buildx build --platform linux/amd64 -f $PATH_DOCKERFILE -t $DOCKER_IMAGE --push ."
+                //sh "docker buildx build --platform linux/arm64 -t $DOCKER_IMAGE --push ."
+                //sh "docker build -f $PATH_DOCKERFILE -t $DOCKER_IMAGE ."
+            }
+        }
+
+        //stage('Push to Docker Hub') {
+        //    steps {
+                //sh 'docker push $DOCKER_IMAGE'
+        //    }
+        //}
+        //# kubectl -n ${NAMESPACE} rollout status deployment/${APP_NAME} --timeout=180s
+    stage('Deploy to Kubernetes (DOKS)') {
+      steps {
+        withCredentials([file(credentialsId: 'kubeconfig-K8S', variable: 'KUBECONFIG_FILE')]) {
+          sh """
+            export KUBECONFIG="${KUBECONFIG_FILE}"
+            kubectl -n ${NAMESPACE} apply -f deploy/k8s/deployment.yaml
+            kubectl -n ${NAMESPACE} apply -f deploy/k8s/service.yaml
+            if [ -f deploy/k8s/ingress.yaml ]; then kubectl -n ${NAMESPACE} apply -f deploy/k8s/ingress.yaml; fi
+
+            # Actualiza a la imagen del build
+            kubectl -n ${NAMESPACE} set image deployment/${APP_NAME} ${APP_NAME}=${IMAGE_NAME}:${IMAGE_TAG}
+
+            # Espera a que termine el rollout
+            kubectl -n ${NAMESPACE} delete pods -l app=${APP_NAME}
+
+          """
+        }
+      }
+    }
+
+
+
+
+
+    }
+}
+

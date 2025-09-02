@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-wh-example-backend-svc
+  namespace: wh
+spec:
+  type: ClusterIP
+  selector:
+    app: ms-wh-example-backend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
