@@ -9,5 +9,6 @@ spec:
     app: ms-wh-example-backend
   ports:
     - name: http
+      protocol: TCP
       port: 80
       targetPort: 8080

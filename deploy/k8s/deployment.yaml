@@ -18,26 +18,12 @@ spec:
           image: docker.io/whuaqui/ms-wh-example-backend:1.0.0-SNAPSHOT
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /q/health/ready
-              port: 8080
-              scheme: HTTP
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /q/health/live
-              port: 8080
-              scheme: HTTP
-            initialDelaySeconds: 15
-            periodSeconds: 20
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
+              memory: "128Mi"
+              cpu: "100m"
             limits:
-              memory: "1Gi"
-              cpu: "500m"
+              memory: "256Mi"
+              cpu: "200m"
       imagePullSecrets:
         - name: dockerhub-secret
